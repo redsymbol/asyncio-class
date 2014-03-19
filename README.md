@@ -1,4 +1,4 @@
-= Using asyncio in Python 3.4
+# Using asyncio in Python 3.4
 
 This is a start of a workshop/class in how to develop software with
 asyncio in Python 3.4.
@@ -12,7 +12,7 @@ updated at the end of the URL bar in your browser. Your instructor
 will reference these, telling you when to move forward and back, or
 jump to a specific page.
 
-== Author
+## Author
 
 Aaron Maxwell
 amax at redsymbol dot net
