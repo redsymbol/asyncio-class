@@ -48,10 +48,20 @@ Best starting point: http://python.org/dev/peps/pep-3156/
 
 == Coroutines
 
+* Optional in asyncio, but bring potential benefits
 * In Python, a coroutine is a generator that follows certain
   conventions
 * In 3.4, uses "yield from" syntax (PEP 380)
 * In asyncio, independently running coroutines are managed by Tasks
+
+== Futures and Tasks
+
+* A Future represents a computation in progress - the asynchronous
+execution of a callable.
+* asyncio.Future is _almost_ compatible with concurrent.futures.Future
+* A Task manages an independently running coroutine. Essentially a
+specialized Future
+* In fact, asyncio.Task subclasses asyncio.Future
 
 == Resources
 
