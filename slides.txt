@@ -67,10 +67,21 @@ Coroutines:
 
 Misc:
 
-* Great article from Glyph - https://glyph.twistedmatrix.com/2014/02/unyielding.html
+* Great article by Glyph putting asyncio in larger context - https://glyph.twistedmatrix.com/2014/02/unyielding.html
 * Excellent gentle tutorial - http://www.getoffmalawn.com/blog/playing-with-asyncio
 * "yield from" PEP - http://python.org/dev/peps/pep-0380/
 
+== More Advanced Background
+
+These are things that do necessarily have anything to do with Python,
+but are worth your time if you want to master the full range of what
+asyncio makes possible.
+
+* "Multi-core scaling: it’s not multi-threaded" by Robert Graham - http://blog.erratasec.com/2013/02/multi-core-scaling-its-not-multi.html
+* "Linux Kernel Development (3rd Ed.), by Robert Love (pub. O'Reilly) - My *FAVORITE*
+software book of 2013 (and 2014, so far). Has a great chapter on
+threads programming, though to get the most out of it you'll want to
+read most of the rest of the book too.
 
 ////////////////
 TODO: Tasks
