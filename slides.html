@@ -4030,6 +4030,11 @@ There are a few standard reusable protocol classes. Substantial
 <ul class="">
 <li>
 <span>
+Optional in asyncio, but bring potential benefits
+</span>
+</li>
+<li>
+<span>
 In Python, a coroutine is a generator that follows certain
   conventions
 </span>
@@ -4042,6 +4047,35 @@ In 3.4, uses "yield from" syntax (PEP 380)
 <li>
 <span>
 In asyncio, independently running coroutines are managed by Tasks
+</span>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_futures_and_tasks">Futures and Tasks</h1>
+<div class="sectionbody" style="max-width:45em">
+<ul class="">
+<li>
+<span>
+A Future represents a computation in progress - the asynchronous
+execution of a callable.
+</span>
+</li>
+<li>
+<span>
+asyncio.Future is <em>almost</em> compatible with concurrent.futures.Future
+</span>
+</li>
+<li>
+<span>
+A Task manages an independently running coroutine. Essentially a
+specialized Future
+</span>
+</li>
+<li>
+<span>
+In fact, asyncio.Task subclasses asyncio.Future
 </span>
 </li>
 </ul>
@@ -4080,7 +4114,7 @@ In asyncio, independently running coroutines are managed by Tasks
 <ul class="">
 <li>
 <span>
-Great article from Glyph - <a href="https://glyph.twistedmatrix.com/2014/02/unyielding.html">https://glyph.twistedmatrix.com/2014/02/unyielding.html</a>
+Great article by Glyph putting asyncio in larger context - <a href="https://glyph.twistedmatrix.com/2014/02/unyielding.html">https://glyph.twistedmatrix.com/2014/02/unyielding.html</a>
 </span>
 </li>
 <li>
@@ -4091,6 +4125,29 @@ Excellent gentle tutorial - <a href="http://www.getoffmalawn.com/blog/playing-wi
 <li>
 <span>
 "yield from" PEP - <a href="http://python.org/dev/peps/pep-0380/">http://python.org/dev/peps/pep-0380/</a>
+</span>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_more_advanced_background">More Advanced Background</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>These are things that do necessarily have anything to do with Python,
+but are worth your time if you want to master the full range of what
+asyncio makes possible.</p></div>
+<ul class="">
+<li>
+<span>
+"Multi-core scaling: it’s not multi-threaded" by Robert Graham - <a href="http://blog.erratasec.com/2013/02/multi-core-scaling-its-not-multi.html">http://blog.erratasec.com/2013/02/multi-core-scaling-its-not-multi.html</a>
+</span>
+</li>
+<li>
+<span>
+"Linux Kernel Development (3rd Ed.), by Robert Love (pub. O&#8217;Reilly) - My <strong>FAVORITE</strong>
+software book of 2013 (and 2014, so far). Has a great chapter on
+threads programming, though to get the most out of it you&#8217;ll want to
+read most of the rest of the book too.
 </span>
 </li>
 </ul>
