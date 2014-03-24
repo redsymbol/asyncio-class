@@ -6,6 +6,8 @@
 :data-uri:
 :icons:
 
+*+git clone git@github.com:redsymbol/asyncio-class.git+*
+
 To fully participate: make sure you have Python 3.4 installed on your
 machine. (Earlier versions aren't compatible with this course.) If you
 don't, get it from python.org now, while we're waiting to get started.
@@ -88,7 +90,7 @@ but are worth your time if you want to master the full range of what
 asyncio makes possible.
 
 * "Multi-core scaling: it’s not multi-threaded" by Robert Graham - http://blog.erratasec.com/2013/02/multi-core-scaling-its-not-multi.html
-* "Linux Kernel Development (3rd Ed.), by Robert Love (pub. O'Reilly) - My *FAVORITE*
+* "Linux System Programming (2nd Ed.), by Robert Love (pub. O'Reilly) - My *FAVORITE*
 software book of 2013 (and 2014, so far). Has a great chapter on
 threads programming, though to get the most out of it you'll want to
 read most of the rest of the book too.
