@@ -3928,6 +3928,11 @@ event loops
 </li>
 <li>
 <span>
+coroutines
+</span>
+</li>
+<li>
+<span>
 transports
 </span>
 </li>
@@ -3936,13 +3941,19 @@ transports
 protocols
 </span>
 </li>
-<li>
-<span>
-coroutines
-</span>
-</li>
 </ul>
-<div class="paragraph"><p>Best starting point: <a href="http://python.org/dev/peps/pep-3156/">http://python.org/dev/peps/pep-3156/</a></p></div>
+<div class="paragraph"><p>A decent starting point: <a href="http://python.org/dev/peps/pep-3156/">http://python.org/dev/peps/pep-3156/</a></p></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_asyncio_uses_yield_from">asyncio uses "yield from"</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>Python 3.4 introduced the "yield from" expression. It looks similar
+to, but behaves different from, a simple "yield".</p></div>
+<div class="paragraph"><p>(Personally, I think it should be a separate single token - say,
+"yieldfrom" - to highlight its different semantics. I encourage you to
+think of it that way.)</p></div>
+<div class="paragraph"><p>Learn about this in PEP 380.</p></div>
 </div>
 </div>
 <div class="sect1 slide">
@@ -3956,7 +3967,7 @@ Built-in construct managing event waiting and dispatch
 </li>
 <li>
 <span>
-Normally you don&#8217;t need to think about it
+Normally you can just use the default loop
 </span>
 </li>
 <li>
@@ -3965,6 +3976,277 @@ Can be configured, modified, refined, etc. when you do
 </span>
 </li>
 </ul>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="c"># Most of the time, you&#39;ll just start your &#39;__main__&#39; function</span>
+<span class="c"># with something like this.</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_coroutines">Coroutines</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>In Python asyncio, a coroutine is a generator that follows certain
+conventions.</p></div>
+<div class="paragraph"><p>A generator is a coroutine if it:</p></div>
+<ul class="">
+<li>
+<span>
+returns a value (to the calling coroutine)
+</span>
+</li>
+<li>
+<span>
+yields from a future
+</span>
+</li>
+<li>
+<span>
+yields from another coroutine
+</span>
+</li>
+</ul>
+<div class="paragraph"><p>Note that it doesn&#8217;t just yield (i.e. it&#8217;s "yield from &lt;something&gt;",
+not "yield &lt;value&gt;".</p></div>
+<div class="paragraph"><p>See "The difference between yield and yield-from" by Guido:</p></div>
+<div class="paragraph"><p><a href="https://groups.google.com/forum/#!topic/python-tulip/bmphRrryuFk">https://groups.google.com/forum/#!topic/python-tulip/bmphRrryuFk</a></p></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_more_coroutine_fun_facts">More Coroutine Fun Facts</h1>
+<div class="sectionbody" style="max-width:45em">
+<ul class="">
+<li>
+<span>
+Coroutines can only run when the event loop is running
+</span>
+</li>
+<li>
+<span>
+Coroutines don&#8217;t start running automatically.
+</span>
+</li>
+<li>
+<span>
+You schedule coroutines to run by:
+</span>
+<ul class="">
+<li>
+<span>
+yielding from it (in another calling coroutine)
+</span>
+</li>
+<li>
+<span>
+create a task with asyncio.async()
+</span>
+</li>
+<li>
+<span>
+or equivalently, use loop.create_task()
+</span>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_coroutines_2">Coroutines</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>Coroutines are technically optional in asyncio. But you should use
+them, as a lot of asyncio&#8217;s functionality and expressive power becomes
+much much easily accessible.</p></div>
+<div class="paragraph"><p>The trade-off is that you must learn to think in new ways; coroutines
+and 3.4&#8217;s "yield from" construct are rare in mainstream programming
+languages, so you likely haven&#8217;t worked with anything like them
+before.</p></div>
+<div class="paragraph"><p>Further self-education:</p></div>
+<ul class="">
+<li>
+<span>
+PEP 342 - "Coroutines via Enhanced Generators" (how Python
+  coroutines extend Python generators)
+</span>
+</li>
+<li>
+<span>
+PEP 380 - "Syntax for Delegating to a Subgenerator" (the "yield  from" PEP)
+</span>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_futures_in_asyncio">Futures in asyncio</h1>
+<div class="sectionbody" style="max-width:45em">
+<ul class="">
+<li>
+<span>
+A Future represents a computation in progress - the asynchronous
+execution of a callable.
+</span>
+</li>
+<li>
+<span>
+asyncio.Future is <em>almost</em> compatible with
+concurrent.futures.Future
+</span>
+</li>
+<li>
+<span>
+you can yield from a future!
+</span>
+</li>
+</ul>
+<div class="paragraph"><p>Important methods:</p></div>
+<ul class="">
+<li>
+<span>
+done() - True iff the future has a result
+</span>
+</li>
+<li>
+<span>
+set_result() - Complete the future with a given result
+</span>
+</li>
+<li>
+<span>
+result() - Return the result, or raise an exception if none set yet.
+</span>
+</li>
+<li>
+<span>
+cancel() - Cancel the future.
+</span>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_future_exercise">Future exercise</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>Open a Python 3 terminal, and type the following:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="n">future</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Future</span><span class="p">()</span>
+</pre></div></div></div>
+<div class="paragraph"><p>Play with invoking the following methods on the future object:</p></div>
+<ul class="">
+<li>
+<span>
+done()
+</span>
+</li>
+<li>
+<span>
+result()
+</span>
+</li>
+<li>
+<span>
+set_result(<em>Your Name</em>)
+</span>
+</li>
+<li>
+<span>
+cancelled()
+</span>
+</li>
+<li>
+<span>
+cancel()
+</span>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_futures_eventually_have_a_result">Futures Eventually Have A Result</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">future</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Future</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">future</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
+<span class="bp">False</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="c"># This raises an exception, because the future is not yet done.</span>
+<span class="o">...</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">2</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+  <span class="n">File</span> <span class="s">&quot;/home/amax/opt/Python-3.4.1/lib/python3.4/asyncio/futures.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">237</span><span class="p">,</span> <span class="ow">in</span> <span class="n">result</span>
+    <span class="k">raise</span> <span class="n">InvalidStateError</span><span class="p">(</span><span class="s">&#39;Result is not ready.&#39;</span><span class="p">)</span>
+<span class="n">asyncio</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">InvalidStateError</span><span class="p">:</span> <span class="n">Result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">ready</span><span class="o">.</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">future</span><span class="o">.</span><span class="n">set_result</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">future</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
+<span class="bp">True</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+<span class="s">&#39;foo&#39;</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_tasks_are_a_kind_of_future">Tasks are a kind of Future</h1>
+<div class="sectionbody" style="max-width:45em">
+<ul class="">
+<li>
+<span>
+A Task manages an independently running coroutine
+</span>
+</li>
+<li>
+<span>
+In fact, asyncio.Task subclasses asyncio.Future
+</span>
+</li>
+<li>
+<span>
+Create using asyncio.async
+</span>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_you_start_a_coroutine_running_with_a_task">You start a coroutine running with a Task</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>In asyncio, when you define a coroutine - which, remember, is a
+generator - it doesn&#8217;t start executing right away.</p></div>
+<div class="paragraph"><p>You run it by wrapping the coroutine in a task, and then running that
+task in the event loop.</p></div>
+<div class="paragraph"><p>(This is the run_until_complete() method.)</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="c"># create a task object, and then...</span>
+<span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+<span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_creating_a_task">Creating a task</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>Open a file named task_demo.py, and type in the following (you can
+skip the comments).</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">asyncio</span>
+
+<span class="nd">@asyncio.coroutine</span>
+<span class="k">def</span> <span class="nf">my_coro</span><span class="p">():</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Hello, YOUR NAME&#39;</span><span class="p">)</span>
+
+<span class="c"># You don&#39;t normally create an instance of Task directly.</span>
+<span class="c"># Instead, use the factory function async().</span>
+
+<span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">async</span><span class="p">(</span><span class="n">my_coro</span><span class="p">())</span>
+<span class="c"># Note that I passed the coroutine *object*, not function.</span>
+<span class="c"># I.e. &quot;my_coro()&quot; not &quot;my_coro&quot;</span>
+
+<span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+<span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+</pre></div></div></div>
+<div class="paragraph"><p>(What happens if you comment out the last line?)</p></div>
 </div>
 </div>
 <div class="sect1 slide">
@@ -4026,129 +4308,201 @@ There are a few standard reusable protocol classes. Substantial
 </div>
 </div>
 <div class="sect1 slide">
-<h1 id="_coroutines">Coroutines</h1>
+<h1 id="_implementing_a_protocol">Implementing a Protocol</h1>
 <div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>asyncio provides a base Protocol class, that you can use to implement
+protocols for TCP servers.</p></div>
+<div class="paragraph"><p>You implement a protocol by subclassing asyncio.Protocol, and
+overriding certain methods. The ones we will look at are:</p></div>
 <ul class="">
 <li>
 <span>
-Optional in asyncio, but bring potential benefits
+connection_made(self, transport)
 </span>
 </li>
 <li>
 <span>
-In Python, a coroutine is a generator that follows certain
-  conventions
+data_received(self, data)
 </span>
 </li>
 <li>
 <span>
-In 3.4, uses "yield from" syntax (PEP 380)
-</span>
-</li>
-<li>
-<span>
-In asyncio, independently running coroutines are managed by Tasks
+connection_lost(self, exc)
 </span>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect1 slide">
-<h1 id="_futures_and_tasks">Futures and Tasks</h1>
+<h1 id="_let_8217_s_make_an_echo_server">Let&#8217;s Make an Echo Server</h1>
 <div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>You will need:</p></div>
 <ul class="">
 <li>
 <span>
-A Future represents a computation in progress - the asynchronous
-execution of a callable.
+telnet, or some variant of netcat (nc, ncat, etc.)
 </span>
 </li>
 <li>
 <span>
-asyncio.Future is <em>almost</em> compatible with concurrent.futures.Future
-</span>
-</li>
-<li>
-<span>
-A Task manages an independently running coroutine. Essentially a
-specialized Future
-</span>
-</li>
-<li>
-<span>
-In fact, asyncio.Task subclasses asyncio.Future
+Python 3.4
 </span>
 </li>
 </ul>
+<div class="paragraph"><p>Create a file named "echo_server.py" and start it like this:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">4242</span>
+<span class="k">class</span> <span class="nc">SimpleEchoProtocol</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div></div></div>
 </div>
 </div>
 <div class="sect1 slide">
-<h1 id="_resources">Resources</h1>
+<h1 id="_creating_the_server">Creating The Server</h1>
 <div class="sectionbody" style="max-width:45em">
-<div class="paragraph"><p>asyncio (formerly named "tulip"):</p></div>
-<ul class="">
-<li>
-<span>
-<a href="http://python.org/dev/peps/pep-3156/">http://python.org/dev/peps/pep-3156/</a>
-</span>
-</li>
-<li>
-<span>
-<a href="http://docs.python.org/3.4/library/asyncio.html">http://docs.python.org/3.4/library/asyncio.html</a>
-</span>
-</li>
-</ul>
-<div class="paragraph"><p>Coroutines:</p></div>
-<ul class="">
-<li>
-<span>
-<a href="http://python.org/dev/peps/pep-0342/">http://python.org/dev/peps/pep-0342/</a>
-</span>
-</li>
-<li>
-<span>
-<a href="http://www.dabeaz.com/coroutines/">http://www.dabeaz.com/coroutines/</a>
-</span>
-</li>
-</ul>
-<div class="paragraph"><p>Misc:</p></div>
-<ul class="">
-<li>
-<span>
-Great article by Glyph putting asyncio in larger context - <a href="https://glyph.twistedmatrix.com/2014/02/unyielding.html">https://glyph.twistedmatrix.com/2014/02/unyielding.html</a>
-</span>
-</li>
-<li>
-<span>
-Excellent gentle tutorial - <a href="http://www.getoffmalawn.com/blog/playing-with-asyncio">http://www.getoffmalawn.com/blog/playing-with-asyncio</a>
-</span>
-</li>
-<li>
-<span>
-"yield from" PEP - <a href="http://python.org/dev/peps/pep-0380/">http://python.org/dev/peps/pep-0380/</a>
-</span>
-</li>
-</ul>
+<div class="paragraph"><p>The event loop has a method called create_server we are going to
+leverage. It handles creating and passing the transport to the
+protocol methods for us.</p></div>
+<div class="paragraph"><p>Add the following lines to the end of echo_server.py:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+<span class="n">pending_server</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">create_server</span><span class="p">(</span><span class="n">SimpleEchoProtocol</span><span class="p">,</span> <span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+<span class="n">server</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">pending_server</span><span class="p">)</span>
+<span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">server</span><span class="o">.</span><span class="n">wait_closed</span><span class="p">())</span>
+</pre></div></div></div>
+<div class="paragraph"><p>create_server() returns a coroutine. The server starts when this
+coroutine is run by the event loop.</p></div>
 </div>
 </div>
 <div class="sect1 slide">
-<h1 id="_more_advanced_background">More Advanced Background</h1>
+<h1 id="_making_the_connection">Making the connection</h1>
 <div class="sectionbody" style="max-width:45em">
-<div class="paragraph"><p>These are things that do necessarily have anything to do with Python,
-but are worth your time if you want to master the full range of what
-asyncio makes possible.</p></div>
+<div class="paragraph"><p>The Protocol.connection_made method is invoked when a client makes an
+incoming TCP connection. Its argument is a transport object, which in
+this case represents a TCP socket connection. The code for
+create_server conveniently provides for us.</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">4242</span>
+<span class="k">class</span> <span class="nc">SimpleEchoProtocol</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">connection_made</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;Connection made&#39;</span><span class="p">)</span>
+        <span class="c"># We keep the transport object, so we can</span>
+        <span class="c"># write to it later.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="o">=</span> <span class="n">transport</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_receiving_data">Receiving Data</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>When inbound data is received on the socket, the protocol&#8217;s
+data_received method is invoked. Since this is an echo server, we want
+to parrot what we receive right back.</p></div>
+<div class="paragraph"><p>Add the following method to SimpleEchoProtocol:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre>    <span class="k">def</span> <span class="nf">data_received</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="c"># This is why we kept the transport when</span>
+        <span class="c"># making the connection.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;echo:&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_closing_the_connection">Closing the connection</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>When the connection is broken, the protocol object&#8217;s connection_lost
+method is invoked. If this is done cleanly, its argument is None; else
+it is passed an exception object.</p></div>
+<div class="paragraph"><p>Add this method to SimpleEchoProtocol:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre>    <span class="k">def</span> <span class="nf">connection_lost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Connection lost! Closing server...&quot;</span><span class="p">)</span>
+        <span class="c"># This variable &quot;server&quot; will be in global scope by</span>
+        <span class="c"># the time the method is invoked.</span>
+        <span class="n">server</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_test_it_out">Test it out</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="c"># In one terminal tab:</span>
+python3 echo_server.py
+
+<span class="c"># In another tab:</span>
+telnet localhost 4242
+
+<span class="c"># Or if you don&#39;t have telnet, you can use netcat/nc/ncat:</span>
+netcat localhost 4242
+</pre></div></div></div>
+<div class="paragraph"><p>Type in a few characters and press &lt;enter&gt; at the telnet
+prompt. Notice what it replies with. Look at the python3 process tab,
+and note its output.</p></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_using_tasks">Using Tasks</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>We just implemented a simple TCP server using asyncio&#8217;s Protocol
+abstraction. Another way to implement servers is by using Tasks.</p></div>
+<div class="paragraph"><p>Let&#8217;s implement the echo server again, using the task approach.</p></div>
+<div class="paragraph"><p>Along the way, we will also learn a little about asyncio&#8217;s support for callbacks.</p></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_callbacks_for_futures_and_tasks">Callbacks for futures and tasks</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>asyncio.Future has a method named add_done_callback. This lets you
+register a callable, that is invoked when the future is done.</p></div>
+<div class="paragraph"><p>(Remember, a task is a future too - one that runs a coroutine.)</p></div>
+<div class="paragraph"><p>The callback is passed the task object as an argument.</p></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_task_callback_example">Task callback example</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>Type the following into a file named run_task.py:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">async</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">announce_task_done</span><span class="p">(</span><span class="n">task</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Task is done: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">task</span><span class="p">)))</span>
+<span class="n">task</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="n">announce_task_done</span><span class="p">)</span>
+<span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+</pre></div></div></div>
+<div class="paragraph"><p>Then invoke with "python3 run_task.py".</p></div>
+<div class="paragraph"><p>What happens if you omit the last line?</p></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_thank_you">Thank you!</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>For being beta testers for this free class in asyncio.</p></div>
+<div class="paragraph"><p>Contact me any time:</p></div>
 <ul class="">
 <li>
 <span>
-"Multi-core scaling: it’s not multi-threaded" by Robert Graham - <a href="http://blog.erratasec.com/2013/02/multi-core-scaling-its-not-multi.html">http://blog.erratasec.com/2013/02/multi-core-scaling-its-not-multi.html</a>
+Aaron Maxwell
 </span>
 </li>
 <li>
 <span>
-"Linux System Programming (2nd Ed.), by Robert Love (pub. O&#8217;Reilly) - My <strong>FAVORITE</strong>
-software book of 2013 (and 2014, so far). Has a great chapter on
-threads programming, though to get the most out of it you&#8217;ll want to
-read most of the rest of the book too.
+<a href="mailto:amax@redsymbol.net">amax@redsymbol.net</a>
+</span>
+</li>
+<li>
+<span>
+<a href="http://linkedin.com/in/aaronmaxwell">http://linkedin.com/in/aaronmaxwell</a>
+</span>
+</li>
+<li>
+<span>
+"redsymbol" on github, hacker news, twitter, etc.
 </span>
 </li>
 </ul>
