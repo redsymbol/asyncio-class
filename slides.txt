@@ -9,8 +9,9 @@
 *+git clone git@github.com:redsymbol/asyncio-class.git+*
 
 To fully participate: make sure you have Python 3.4 installed on your
-machine. (Earlier versions aren't compatible with this course.) If you
-don't, get it from python.org now, while we're waiting to get started.
+machine, and are able to start up the Python interpreter. (Earlier
+versions aren't compatible with this course.) If you don't, get it
+from python.org now, while we're waiting to get started.
 
 == Concepts
 
@@ -73,8 +74,8 @@ https://groups.google.com/forum/#!topic/python-tulip/bmphRrryuFk
 * Coroutines don't start running automatically.
 * You schedule coroutines to run by:
   - yielding from it (in another calling coroutine)
-  - create a task with asyncio.async()
-  - or equivalently, use loop.create_task()
+  - create a task, then schedule it
+  - or use loop.create_task(coro()) do both in one step
 
 == Coroutines 
 
@@ -184,10 +185,10 @@ import asyncio
 def my_coro():
     print('Hello, YOUR NAME')
 
-# You don't normally create an instance of Task directly.
-# Instead, use the factory function async().
-
+# The factory function async() takes either a coroutine
+# object or a future, and wraps it in a task.
 task = asyncio.async(my_coro())
+
 # Note that I passed the coroutine *object*, not function.
 # I.e. "my_coro()" not "my_coro"
 
@@ -234,7 +235,7 @@ You will need:
  * telnet, or some variant of netcat (nc, ncat, etc.)
  * Python 3.4
 
-Create a file named "echo_server.py" and start it like this:
+Create a file named "echo_server_simple.py" and start it like this:
 [source,python]
 ----
 import asyncio
@@ -249,7 +250,7 @@ The event loop has a method called create_server we are going to
 leverage. It handles creating and passing the transport to the
 protocol methods for us.
 
-Add the following lines to the end of echo_server.py:
+Add the following lines to the end of echo_server_simple.py:
 
 [source,python]
 ----
@@ -320,7 +321,7 @@ Add this method to SimpleEchoProtocol:
 [source,bash]
 ----
 # In one terminal tab:
-python3 echo_server.py
+python3 echo_server_simple.py
 
 # In another tab:
 telnet localhost 4242
@@ -340,7 +341,7 @@ abstraction. Another way to implement servers is by using Tasks.
 
 Let's implement the echo server again, using the task approach.
 
-Along the way, we will also learn a little about asyncio's support for callbacks.
+Along the way, we will also learn about using callbacks in asyncio.
 
 == Callbacks for futures and tasks
 
@@ -368,6 +369,80 @@ asyncio.get_event_loop().run_until_complete(task)
 Then invoke with "python3 run_task.py".
 
 What happens if you omit the last line?
+
+== Helper function: asyncio.start_server
+
+start_server takes a callable argument (along with a host and
+port). The callable is a callback that handles a client connection.
+
+Each new connection on the protocol re-invokes it.
+
+[source,python]
+----
+import asyncio
+def client_connected_handler(client_reader, client_writer):
+    print('Got connection from client')
+
+pending_server = asyncio.start_server(client_connected_handler,
+                 'localhost', PORT)
+----
+
+== Simple Callback Server
+
+Create a file named echo_server_task.py and type this in:
+
+[source,python]
+----
+import asyncio
+PORT=4242
+def client_connected_handler(client_reader, client_writer):
+    print('Got connection from client')
+
+loop = asyncio.get_event_loop()
+pending_server = asyncio.start_server(client_connected_handler,
+                 'localhost', PORT)
+server = loop.run_until_complete(pending_server)
+try:
+    loop.run_forever()
+finally:
+    loop.close()
+----
+
+Then run with python3, and connect with telnet or netcat as before.
+
+== Echoing action
+
+We want to add in actual echoing behavior. The echoing action is
+handled by fetching data from the reader, and writing it right back to
+the writer. Add this function to echo_server_task.py:
+
+[source,python]
+----
+@asyncio.coroutine
+def handle_client(client_reader, client_writer):
+    while True:
+        data = (yield from client_reader.readline())
+        print(data)
+        client_writer.write(b'echo:' + data)
+----
+
+The next step is to wire it up to the server, so it is applied to
+incoming connections.
+
+== Scheduling The Task
+
+To make this connection, we will use a task. Modify client_connected_handler like so:
+
+[source,python]
+----
+
+def client_connected_handler(client_reader, client_writer):
+    print('Got connection from client')
+    task = asyncio.async(handle_client(client_reader, client_writer))
+    task.add_done_callback(client_done)
+----
+
+Then start your echo server again, and try to connect.
 
 == Thank you!
 
