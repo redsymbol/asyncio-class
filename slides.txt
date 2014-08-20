@@ -18,17 +18,184 @@ asyncio is a module implementing asynchronous I/O, built into Python
 3. Some of its key concepts:
 
 * event loops
+* coroutines
 * transports
 * protocols
-* coroutines
 
-Best starting point: http://python.org/dev/peps/pep-3156/
+A decent starting point: http://python.org/dev/peps/pep-3156/
+
+== asyncio uses "yield from"
+
+Python 3.4 introduced the "yield from" expression. It looks similar
+to, but behaves different from, a simple "yield".
+
+(Personally, I think it should be a separate single token - say,
+"yieldfrom" - to highlight its different semantics. I encourage you to
+think of it that way.)
+
+Learn about this in PEP 380.
 
 == Event Loops
 
 * Built-in construct managing event waiting and dispatch
-* Normally you don't need to think about it
+* Normally you can just use the default loop
 * Can be configured, modified, refined, etc. when you do
+
+[source,python]
+----
+# Most of the time, you'll just start your '__main__' function
+# with something like this.
+import asyncio
+loop = asyncio.get_event_loop()
+----
+
+== Coroutines
+
+In Python asyncio, a coroutine is a generator that follows certain
+conventions.
+
+A generator is a coroutine if it: 
+
+ * returns a value (to the calling coroutine)
+ * yields from a future 
+ * yields from another coroutine
+
+Note that it doesn't just yield (i.e. it's "yield from <something>",
+not "yield <value>".
+
+See "The difference between yield and yield-from" by Guido:
+
+https://groups.google.com/forum/#!topic/python-tulip/bmphRrryuFk
+
+== More Coroutine Fun Facts
+
+* Coroutines can only run when the event loop is running
+* Coroutines don't start running automatically.
+* You schedule coroutines to run by:
+  - yielding from it (in another calling coroutine)
+  - create a task with asyncio.async()
+  - or equivalently, use loop.create_task()
+
+== Coroutines 
+
+Coroutines are technically optional in asyncio. But you should use
+them, as a lot of asyncio's functionality and expressive power becomes
+much much easily accessible.
+
+The trade-off is that you must learn to think in new ways; coroutines
+and 3.4's "yield from" construct are rare in mainstream programming
+languages, so you likely haven't worked with anything like them
+before.
+
+Further self-education: 
+
+* PEP 342 - "Coroutines via Enhanced Generators" (how Python
+  coroutines extend Python generators) 
+* PEP 380 - "Syntax for Delegating to a Subgenerator" (the "yield  from" PEP)
+
+== Futures in asyncio
+
+* A Future represents a computation in progress - the asynchronous
+execution of a callable.
+* asyncio.Future is _almost_ compatible with
+concurrent.futures.Future
+* you can yield from a future!
+
+Important methods:
+
+* done() - True iff the future has a result
+* set_result() - Complete the future with a given result
+* result() - Return the result, or raise an exception if none set yet.
+* cancel() - Cancel the future.
+
+== Future exercise
+
+Open a Python 3 terminal, and type the following:
+
+[source,python]
+----
+import asyncio
+future = asyncio.Future()
+----
+
+Play with invoking the following methods on the future object:
+
+ * done()
+ * result()
+ * set_result('Your Name')
+ * cancelled()
+ * cancel()
+
+== Futures Eventually Have A Result
+
+[source,python]
+----
+>>> import asyncio
+>>> future = asyncio.Future()
+>>> future.done()
+False
+>>> # This raises an exception, because the future is not yet done.
+... future.result()
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "/home/amax/opt/Python-3.4.1/lib/python3.4/asyncio/futures.py", line 237, in result
+    raise InvalidStateError('Result is not ready.')
+asyncio.futures.InvalidStateError: Result is not ready.
+>>> future.set_result('foo')
+>>> future.done()
+True
+>>> future.result()
+'foo'
+----
+
+== Tasks are a kind of Future
+* A Task manages an independently running coroutine
+* In fact, asyncio.Task subclasses asyncio.Future
+* Create using asyncio.async
+
+== You start a coroutine running with a Task
+
+In asyncio, when you define a coroutine - which, remember, is a
+generator - it doesn't start executing right away. 
+
+You run it by wrapping the coroutine in a task, and then running that
+task in the event loop.
+
+(This is the run_until_complete() method.)
+
+[source,python]
+----
+import asyncio
+# create a task object, and then...
+loop = asyncio.get_event_loop()
+loop.run_until_complete(task)
+----
+
+== Creating a task
+
+Open a file named task_demo.py, and type in the following (you can
+skip the comments).
+
+[source,python]
+----
+import asyncio
+
+@asyncio.coroutine
+def my_coro():
+    print('Hello, YOUR NAME')
+
+# You don't normally create an instance of Task directly.
+# Instead, use the factory function async().
+
+task = asyncio.async(my_coro())
+# Note that I passed the coroutine *object*, not function.
+# I.e. "my_coro()" not "my_coro"
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(task)
+----
+
+(What happens if you comment out the last line?)
 
 == Transports
 
@@ -48,22 +215,210 @@ Best starting point: http://python.org/dev/peps/pep-3156/
 * There are a few standard reusable protocol classes. Substantial
   software systems will implement their own
 
-== Coroutines
+== Implementing a Protocol
 
-* Optional in asyncio, but bring potential benefits
-* In Python, a coroutine is a generator that follows certain
-  conventions
-* In 3.4, uses "yield from" syntax (PEP 380)
-* In asyncio, independently running coroutines are managed by Tasks
+asyncio provides a base Protocol class, that you can use to implement
+protocols for TCP servers.
 
-== Futures and Tasks
+You implement a protocol by subclassing asyncio.Protocol, and
+overriding certain methods. The ones we will look at are:
 
-* A Future represents a computation in progress - the asynchronous
-execution of a callable.
-* asyncio.Future is _almost_ compatible with concurrent.futures.Future
-* A Task manages an independently running coroutine. Essentially a
-specialized Future
-* In fact, asyncio.Task subclasses asyncio.Future
+ * connection_made(self, transport)
+ * data_received(self, data)
+ * connection_lost(self, exc)
+
+== Let's Make an Echo Server
+
+You will need:
+
+ * telnet, or some variant of netcat (nc, ncat, etc.)
+ * Python 3.4
+
+Create a file named "echo_server.py" and start it like this:
+[source,python]
+----
+import asyncio
+PORT = 4242
+class SimpleEchoProtocol(asyncio.Protocol):
+    pass
+----
+
+== Creating The Server
+
+The event loop has a method called create_server we are going to
+leverage. It handles creating and passing the transport to the
+protocol methods for us.
+
+Add the following lines to the end of echo_server.py:
+
+[source,python]
+----
+loop = asyncio.get_event_loop()
+pending_server = loop.create_server(SimpleEchoProtocol, 'localhost', PORT)
+server = loop.run_until_complete(pending_server)
+loop.run_until_complete(server.wait_closed())
+----
+
+create_server() returns a coroutine. The server starts when this
+coroutine is run by the event loop.
+
+== Making the connection
+
+The Protocol.connection_made method is invoked when a client makes an
+incoming TCP connection. Its argument is a transport object, which in
+this case represents a TCP socket connection. The code for
+create_server conveniently provides for us.
+
+[source,python]
+----
+import asyncio
+PORT = 4242
+class SimpleEchoProtocol(asyncio.Protocol):
+    def connection_made(self, transport):
+        print('Connection made')
+        # We keep the transport object, so we can
+        # write to it later.
+        self.transport = transport
+----
+
+== Receiving Data
+
+When inbound data is received on the socket, the protocol's
+data_received method is invoked. Since this is an echo server, we want
+to parrot what we receive right back.
+
+Add the following method to SimpleEchoProtocol:
+
+[source,python]
+----
+    def data_received(self, data):
+        print(data)
+        # This is why we kept the transport when
+        # making the connection.
+        self.transport.write(b'echo:')
+        self.transport.write(data)
+----
+
+== Closing the connection
+
+When the connection is broken, the protocol object's connection_lost
+method is invoked. If this is done cleanly, its argument is None; else
+it is passed an exception object.
+
+Add this method to SimpleEchoProtocol:
+[source,python]
+----
+    def connection_lost(self, exc):
+        print("Connection lost! Closing server...")
+        # This variable "server" will be in global scope by
+	# the time the method is invoked.
+        server.close()
+----
+
+== Test it out
+
+[source,bash]
+----
+# In one terminal tab:
+python3 echo_server.py
+
+# In another tab:
+telnet localhost 4242
+
+# Or if you don't have telnet, you can use netcat/nc/ncat:
+netcat localhost 4242
+----
+
+Type in a few characters and press <enter> at the telnet
+prompt. Notice what it replies with. Look at the python3 process tab,
+and note its output.
+
+== Using Tasks
+
+We just implemented a simple TCP server using asyncio's Protocol
+abstraction. Another way to implement servers is by using Tasks.
+
+Let's implement the echo server again, using the task approach.
+
+Along the way, we will also learn a little about asyncio's support for callbacks.
+
+== Callbacks for futures and tasks
+
+asyncio.Future has a method named add_done_callback. This lets you
+register a callable, that is invoked when the future is done.
+
+(Remember, a task is a future too - one that runs a coroutine.)
+
+The callback is passed the task object as an argument.
+
+== Task callback example
+
+Type the following into a file named run_task.py:
+
+[source,python]
+----
+import asyncio
+task = asyncio.async(asyncio.sleep(1))
+def announce_task_done(task):
+    print("Task is done: " + str(id(task)))
+task.add_done_callback(announce_task_done)
+asyncio.get_event_loop().run_until_complete(task)
+----
+
+Then invoke with "python3 run_task.py".
+
+What happens if you omit the last line?
+
+== Thank you!
+
+For being beta testers for this free class in asyncio.
+
+Contact me any time:
+
+ - Aaron Maxwell
+ - amax@redsymbol.net
+ - http://linkedin.com/in/aaronmaxwell
+ - "redsymbol" on github, hacker news, twitter, etc.
+
+////////////////
+== Why Separate them?
+
+Most networking libraries don't explicity have separate abstractions
+for transports and protocols. Even the standard library often doesn't
+separate them, internally; the code for each is mixed together.
+
+However, it is a powerful generalization that lets us use the same
+protocols over different, even new transports (e.g. RPC), and even
+nest protocols (e.g. JSON-RPC).
+
+The ideas of transport and protocol are fleshed out more in PEP 3153,
+"Asynchronous IO support"
+
+== More Advanced Background
+
+These are things that don't necessarily have anything to do with
+Python, but are worth your time if you want to master the full range
+of what asyncio makes possible.
+
+* "Multi-core scaling: it’s not multi-threaded" by Robert Graham - http://blog.erratasec.com/2013/02/multi-core-scaling-its-not-multi.html
+* "Linux System Programming (2nd Ed.), by Robert Love (pub. O'Reilly) - My *FAVORITE*
+software book of 2013 (and 2014, so far). Has a great chapter on
+threads programming, though to get the most out of it you'll want to
+read most of the rest of the book too.
+
+TODO: Tasks
+
+[source,python]
+----
+def foo(x):
+    print(x)
+foo("Hello World")
+----
+
+"The difference between yield and yield-from" by Guido:
+https://groups.google.com/forum/#!topic/python-tulip/bmphRrryuFk
+(It also explains why coroutines in asyncio use just yield from, and
+not yield.)
 
 == Resources
 
@@ -83,26 +438,29 @@ Misc:
 * Excellent gentle tutorial - http://www.getoffmalawn.com/blog/playing-with-asyncio
 * "yield from" PEP - http://python.org/dev/peps/pep-0380/
 
-== More Advanced Background
 
-These are things that don't necessarily have anything to do with
-Python, but are worth your time if you want to master the full range
-of what asyncio makes possible.
-
-* "Multi-core scaling: it’s not multi-threaded" by Robert Graham - http://blog.erratasec.com/2013/02/multi-core-scaling-its-not-multi.html
-* "Linux System Programming (2nd Ed.), by Robert Love (pub. O'Reilly) - My *FAVORITE*
-software book of 2013 (and 2014, so far). Has a great chapter on
-threads programming, though to get the most out of it you'll want to
-read most of the rest of the book too.
-
-////////////////
-TODO: Tasks
-
+== Example
 [source,python]
 ----
-def foo(x):
-    print(x)
-foo("Hello World")
+# This is a coroutine.
+import asyncio
+@asyncio.coroutine
+def transfer_data(src_reader, dest_writer):
+    # Handle the requests for a specific client with a line oriented protocol
+    while True:
+        # Read a line
+        data = (yield from src_reader.readline())
+        # Send it to the destination
+        dest_writer.write(data)
 ----
+
+== Coroutines
+
+* In Python, a coroutine is a generator
+* In asyncio, a generator that follows certain conventions
+* In particular, produces values via "return" or "yield from" (or
+throwing an exception)
+* Does NOT use "yield" 
+
 
 ////////////////
