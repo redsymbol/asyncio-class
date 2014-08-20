@@ -3911,8 +3911,9 @@ setTimeout(w3c_slidy.hide_slides, 50);
 <div class="sectionbody" style="max-width:45em">
 <div class="paragraph"><p><strong><tt>git clone <a href="mailto:git@github.com">git@github.com</a>:redsymbol/asyncio-class.git</tt></strong></p></div>
 <div class="paragraph"><p>To fully participate: make sure you have Python 3.4 installed on your
-machine. (Earlier versions aren&#8217;t compatible with this course.) If you
-don&#8217;t, get it from python.org now, while we&#8217;re waiting to get started.</p></div>
+machine, and are able to start up the Python interpreter. (Earlier
+versions aren&#8217;t compatible with this course.) If you don&#8217;t, get it
+from python.org now, while we&#8217;re waiting to get started.</p></div>
 </div>
 </div>
 <div class="sect1 slide">
@@ -4039,12 +4040,12 @@ yielding from it (in another calling coroutine)
 </li>
 <li>
 <span>
-create a task with asyncio.async()
+create a task, then schedule it
 </span>
 </li>
 <li>
 <span>
-or equivalently, use loop.create_task()
+or use loop.create_task(coro()) do both in one step
 </span>
 </li>
 </ul>
@@ -4236,10 +4237,10 @@ skip the comments).</p></div>
 <span class="k">def</span> <span class="nf">my_coro</span><span class="p">():</span>
     <span class="k">print</span><span class="p">(</span><span class="s">&#39;Hello, YOUR NAME&#39;</span><span class="p">)</span>
 
-<span class="c"># You don&#39;t normally create an instance of Task directly.</span>
-<span class="c"># Instead, use the factory function async().</span>
-
+<span class="c"># The factory function async() takes either a coroutine</span>
+<span class="c"># object or a future, and wraps it in a task.</span>
 <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">async</span><span class="p">(</span><span class="n">my_coro</span><span class="p">())</span>
+
 <span class="c"># Note that I passed the coroutine *object*, not function.</span>
 <span class="c"># I.e. &quot;my_coro()&quot; not &quot;my_coro&quot;</span>
 
@@ -4349,7 +4350,7 @@ Python 3.4
 </span>
 </li>
 </ul>
-<div class="paragraph"><p>Create a file named "echo_server.py" and start it like this:</p></div>
+<div class="paragraph"><p>Create a file named "echo_server_simple.py" and start it like this:</p></div>
 <div class="listingblock">
 <div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">asyncio</span>
 <span class="n">PORT</span> <span class="o">=</span> <span class="mi">4242</span>
@@ -4364,7 +4365,7 @@ Python 3.4
 <div class="paragraph"><p>The event loop has a method called create_server we are going to
 leverage. It handles creating and passing the transport to the
 protocol methods for us.</p></div>
-<div class="paragraph"><p>Add the following lines to the end of echo_server.py:</p></div>
+<div class="paragraph"><p>Add the following lines to the end of echo_server_simple.py:</p></div>
 <div class="listingblock">
 <div class="content"><div class="highlight"><pre><span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
 <span class="n">pending_server</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">create_server</span><span class="p">(</span><span class="n">SimpleEchoProtocol</span><span class="p">,</span> <span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
@@ -4432,7 +4433,7 @@ it is passed an exception object.</p></div>
 <div class="sectionbody" style="max-width:45em">
 <div class="listingblock">
 <div class="content"><div class="highlight"><pre><span class="c"># In one terminal tab:</span>
-python3 echo_server.py
+python3 echo_server_simple.py
 
 <span class="c"># In another tab:</span>
 telnet localhost 4242
@@ -4451,7 +4452,7 @@ and note its output.</p></div>
 <div class="paragraph"><p>We just implemented a simple TCP server using asyncio&#8217;s Protocol
 abstraction. Another way to implement servers is by using Tasks.</p></div>
 <div class="paragraph"><p>Let&#8217;s implement the echo server again, using the task approach.</p></div>
-<div class="paragraph"><p>Along the way, we will also learn a little about asyncio&#8217;s support for callbacks.</p></div>
+<div class="paragraph"><p>Along the way, we will also learn about using callbacks in asyncio.</p></div>
 </div>
 </div>
 <div class="sect1 slide">
@@ -4477,6 +4478,75 @@ register a callable, that is invoked when the future is done.</p></div>
 </pre></div></div></div>
 <div class="paragraph"><p>Then invoke with "python3 run_task.py".</p></div>
 <div class="paragraph"><p>What happens if you omit the last line?</p></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_helper_function_asyncio_start_server">Helper function: asyncio.start_server</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>start_server takes a callable argument (along with a host and
+port). The callable is a callback that handles a client connection.</p></div>
+<div class="paragraph"><p>Each new connection on the protocol re-invokes it.</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="k">def</span> <span class="nf">client_connected_handler</span><span class="p">(</span><span class="n">client_reader</span><span class="p">,</span> <span class="n">client_writer</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Got connection from client&#39;</span><span class="p">)</span>
+
+<span class="n">pending_server</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">start_server</span><span class="p">(</span><span class="n">client_connected_handler</span><span class="p">,</span>
+                 <span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_simple_callback_server">Simple Callback Server</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>Create a file named echo_server_task.py and type this in:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="n">PORT</span><span class="o">=</span><span class="mi">4242</span>
+<span class="k">def</span> <span class="nf">client_connected_handler</span><span class="p">(</span><span class="n">client_reader</span><span class="p">,</span> <span class="n">client_writer</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Got connection from client&#39;</span><span class="p">)</span>
+
+<span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+<span class="n">pending_server</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">start_server</span><span class="p">(</span><span class="n">client_connected_handler</span><span class="p">,</span>
+                 <span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+<span class="n">server</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">pending_server</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">loop</span><span class="o">.</span><span class="n">run_forever</span><span class="p">()</span>
+<span class="k">finally</span><span class="p">:</span>
+    <span class="n">loop</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div></div></div>
+<div class="paragraph"><p>Then run with python3, and connect with telnet or netcat as before.</p></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_echoing_action">Echoing action</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>We want to add in actual echoing behavior. The echoing action is
+handled by fetching data from the reader, and writing it right back to
+the writer. Add this function to echo_server_task.py:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="nd">@asyncio.coroutine</span>
+<span class="k">def</span> <span class="nf">handle_client</span><span class="p">(</span><span class="n">client_reader</span><span class="p">,</span> <span class="n">client_writer</span><span class="p">):</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span> <span class="kn">from</span> <span class="nn">client_reader.readline</span><span class="err">())</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">client_writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;echo:&#39;</span> <span class="o">+</span> <span class="n">data</span><span class="p">)</span>
+</pre></div></div></div>
+<div class="paragraph"><p>The next step is to wire it up to the server, so it is applied to
+incoming connections.</p></div>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_scheduling_the_task">Scheduling The Task</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>To make this connection, we will use a task. Modify client_connected_handler like so:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="k">def</span> <span class="nf">client_connected_handler</span><span class="p">(</span><span class="n">client_reader</span><span class="p">,</span> <span class="n">client_writer</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Got connection from client&#39;</span><span class="p">)</span>
+    <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">async</span><span class="p">(</span><span class="n">handle_client</span><span class="p">(</span><span class="n">client_reader</span><span class="p">,</span> <span class="n">client_writer</span><span class="p">))</span>
+    <span class="n">task</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="n">client_done</span><span class="p">)</span>
+</pre></div></div></div>
+<div class="paragraph"><p>Then start your echo server again, and try to connect.</p></div>
 </div>
 </div>
 <div class="sect1 slide">
