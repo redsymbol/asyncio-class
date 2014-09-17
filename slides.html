@@ -4201,11 +4201,6 @@ A Task manages an independently running coroutine
 In fact, asyncio.Task subclasses asyncio.Future
 </span>
 </li>
-<li>
-<span>
-Create using asyncio.async
-</span>
-</li>
 </ul>
 </div>
 </div>
@@ -4239,7 +4234,7 @@ skip the comments).</p></div>
 
 <span class="c"># The factory function async() takes either a coroutine</span>
 <span class="c"># object or a future, and wraps it in a task.</span>
-<span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">async</span><span class="p">(</span><span class="n">my_coro</span><span class="p">())</span>
+<span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">(</span><span class="n">my_coro</span><span class="p">())</span>
 
 <span class="c"># Note that I passed the coroutine *object*, not function.</span>
 <span class="c"># I.e. &quot;my_coro()&quot; not &quot;my_coro&quot;</span>
@@ -4269,11 +4264,6 @@ Think of it as a generalization of both a network socket and file
 <span>
 can be bidirectional/streaming; unidirectional; datagram; or
   subprocess (piped I/O)
-</span>
-</li>
-<li>
-<span>
-Responsible for <em>how</em> bytes are transmitted (not <em>what</em> bytes)
 </span>
 </li>
 </ul>
@@ -4306,6 +4296,15 @@ There are a few standard reusable protocol classes. Substantial
 </span>
 </li>
 </ul>
+</div>
+</div>
+<div class="sect1 slide">
+<h1 id="_transports_vs_protocols">Transports vs. Protocols</h1>
+<div class="sectionbody" style="max-width:45em">
+<div class="paragraph"><p>A transport is responsible for <em>how</em> bytes are transmitted.</p></div>
+<div class="paragraph"><p>A protocol defines <em>what</em> bytes to transmit, and when.</p></div>
+<div class="paragraph"><p>Asyncio separates these concerns, so they can be more easily
+composed. This is uncommon but powerful.</p></div>
 </div>
 </div>
 <div class="sect1 slide">
@@ -4403,7 +4402,8 @@ data_received method is invoked. Since this is an echo server, we want
 to parrot what we receive right back.</p></div>
 <div class="paragraph"><p>Add the following method to SimpleEchoProtocol:</p></div>
 <div class="listingblock">
-<div class="content"><div class="highlight"><pre>    <span class="k">def</span> <span class="nf">data_received</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="content"><div class="highlight"><pre>    <span class="c"># new method of SimpleEchoProtocol</span>
+    <span class="k">def</span> <span class="nf">data_received</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="k">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="c"># This is why we kept the transport when</span>
         <span class="c"># making the connection.</span>
@@ -4420,7 +4420,8 @@ method is invoked. If this is done cleanly, its argument is None; else
 it is passed an exception object.</p></div>
 <div class="paragraph"><p>Add this method to SimpleEchoProtocol:</p></div>
 <div class="listingblock">
-<div class="content"><div class="highlight"><pre>    <span class="k">def</span> <span class="nf">connection_lost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc</span><span class="p">):</span>
+<div class="content"><div class="highlight"><pre>    <span class="c"># new method of SimpleEchoProtocol</span>
+    <span class="k">def</span> <span class="nf">connection_lost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc</span><span class="p">):</span>
         <span class="k">print</span><span class="p">(</span><span class="s">&quot;Connection lost! Closing server...&quot;</span><span class="p">)</span>
         <span class="c"># This variable &quot;server&quot; will be in global scope by</span>
         <span class="c"># the time the method is invoked.</span>
@@ -4436,10 +4437,10 @@ it is passed an exception object.</p></div>
 python3 echo_server_simple.py
 
 <span class="c"># In another tab:</span>
-telnet localhost 4242
-
-<span class="c"># Or if you don&#39;t have telnet, you can use netcat/nc/ncat:</span>
 netcat localhost 4242
+
+<span class="c"># Or you can use telnet, or nc, or ncat, or...</span>
+telnet localhost 4242
 </pre></div></div></div>
 <div class="paragraph"><p>Type in a few characters and press &lt;enter&gt; at the telnet
 prompt. Notice what it replies with. Look at the python3 process tab,
@@ -4470,7 +4471,7 @@ register a callable, that is invoked when the future is done.</p></div>
 <div class="paragraph"><p>Type the following into a file named run_task.py:</p></div>
 <div class="listingblock">
 <div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">asyncio</span>
-<span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">async</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">announce_task_done</span><span class="p">(</span><span class="n">task</span><span class="p">):</span>
     <span class="k">print</span><span class="p">(</span><span class="s">&quot;Task is done: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">task</span><span class="p">)))</span>
 <span class="n">task</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="n">announce_task_done</span><span class="p">)</span>
@@ -4478,6 +4479,7 @@ register a callable, that is invoked when the future is done.</p></div>
 </pre></div></div></div>
 <div class="paragraph"><p>Then invoke with "python3 run_task.py".</p></div>
 <div class="paragraph"><p>What happens if you omit the last line?</p></div>
+<div class="paragraph"><p>What happens if you <em>duplicate</em> the last line, so it is run twice?</p></div>
 </div>
 </div>
 <div class="sect1 slide">
@@ -4502,16 +4504,18 @@ port). The callable is a callback that handles a client connection.</p></div>
 <div class="paragraph"><p>Create a file named echo_server_task.py and type this in:</p></div>
 <div class="listingblock">
 <div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">asyncio</span>
-<span class="n">PORT</span><span class="o">=</span><span class="mi">4242</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">4242</span>
+<span class="n">NUM_CLIENTS</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="k">def</span> <span class="nf">client_connected_handler</span><span class="p">(</span><span class="n">client_reader</span><span class="p">,</span> <span class="n">client_writer</span><span class="p">):</span>
     <span class="k">print</span><span class="p">(</span><span class="s">&#39;Got connection from client&#39;</span><span class="p">)</span>
-
 <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
 <span class="n">pending_server</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">start_server</span><span class="p">(</span><span class="n">client_connected_handler</span><span class="p">,</span>
                  <span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
 <span class="n">server</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">pending_server</span><span class="p">)</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="n">loop</span><span class="o">.</span><span class="n">run_forever</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">{} Clients Served&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">NUM_CLIENTS</span><span class="p">))</span>
 <span class="k">finally</span><span class="p">:</span>
     <span class="n">loop</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </pre></div></div></div>
@@ -4527,7 +4531,8 @@ the writer. Add this function to echo_server_task.py:</p></div>
 <div class="listingblock">
 <div class="content"><div class="highlight"><pre><span class="nd">@asyncio.coroutine</span>
 <span class="k">def</span> <span class="nf">handle_client</span><span class="p">(</span><span class="n">client_reader</span><span class="p">,</span> <span class="n">client_writer</span><span class="p">):</span>
-    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;New client&#39;</span><span class="p">)</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">client_reader</span><span class="o">.</span><span class="n">at_eof</span><span class="p">():</span>
         <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span> <span class="kn">from</span> <span class="nn">client_reader.readline</span><span class="err">())</span>
         <span class="k">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="n">client_writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;echo:&#39;</span> <span class="o">+</span> <span class="n">data</span><span class="p">)</span>
@@ -4541,9 +4546,13 @@ incoming connections.</p></div>
 <div class="sectionbody" style="max-width:45em">
 <div class="paragraph"><p>To make this connection, we will use a task. Modify client_connected_handler like so:</p></div>
 <div class="listingblock">
-<div class="content"><div class="highlight"><pre><span class="k">def</span> <span class="nf">client_connected_handler</span><span class="p">(</span><span class="n">client_reader</span><span class="p">,</span> <span class="n">client_writer</span><span class="p">):</span>
-    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Got connection from client&#39;</span><span class="p">)</span>
-    <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">async</span><span class="p">(</span><span class="n">handle_client</span><span class="p">(</span><span class="n">client_reader</span><span class="p">,</span> <span class="n">client_writer</span><span class="p">))</span>
+<div class="content"><div class="highlight"><pre><span class="k">def</span> <span class="nf">client_done</span><span class="p">(</span><span class="n">future</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">NUM_CLIENTS</span>
+    <span class="n">NUM_CLIENTS</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Client done&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">client_connected_handler</span><span class="p">(</span><span class="n">client_reader</span><span class="p">,</span> <span class="n">client_writer</span><span class="p">):</span>
+    <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">(</span><span class="n">handle_client</span><span class="p">(</span><span class="n">client_reader</span><span class="p">,</span> <span class="n">client_writer</span><span class="p">))</span>
     <span class="n">task</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="n">client_done</span><span class="p">)</span>
 </pre></div></div></div>
 <div class="paragraph"><p>Then start your echo server again, and try to connect.</p></div>
