@@ -152,7 +152,6 @@ True
 == Tasks are a kind of Future
 * A Task manages an independently running coroutine
 * In fact, asyncio.Task subclasses asyncio.Future
-* Create using asyncio.async
 
 == You start a coroutine running with a Task
 
@@ -187,7 +186,7 @@ def my_coro():
 
 # The factory function async() takes either a coroutine
 # object or a future, and wraps it in a task.
-task = asyncio.async(my_coro())
+task = asyncio.Task(my_coro())
 
 # Note that I passed the coroutine *object*, not function.
 # I.e. "my_coro()" not "my_coro"
@@ -205,7 +204,6 @@ loop.run_until_complete(task)
   handle, with useful methods
 * can be bidirectional/streaming; unidirectional; datagram; or
   subprocess (piped I/O)
-* Responsible for _how_ bytes are transmitted (not _what_ bytes)
 
 == Protocols
 
@@ -215,6 +213,15 @@ loop.run_until_complete(task)
 * Can be streaming (bi-dir), datagram, or custom
 * There are a few standard reusable protocol classes. Substantial
   software systems will implement their own
+
+== Transports vs. Protocols
+
+A transport is responsible for _how_ bytes are transmitted.
+
+A protocol defines _what_ bytes to transmit, and when.
+
+Asyncio separates these concerns, so they can be more easily
+composed. This is uncommon but powerful.
 
 == Implementing a Protocol
 
@@ -292,6 +299,7 @@ Add the following method to SimpleEchoProtocol:
 
 [source,python]
 ----
+    # new method of SimpleEchoProtocol
     def data_received(self, data):
         print(data)
         # This is why we kept the transport when
@@ -309,6 +317,7 @@ it is passed an exception object.
 Add this method to SimpleEchoProtocol:
 [source,python]
 ----
+    # new method of SimpleEchoProtocol
     def connection_lost(self, exc):
         print("Connection lost! Closing server...")
         # This variable "server" will be in global scope by
@@ -324,10 +333,10 @@ Add this method to SimpleEchoProtocol:
 python3 echo_server_simple.py
 
 # In another tab:
-telnet localhost 4242
-
-# Or if you don't have telnet, you can use netcat/nc/ncat:
 netcat localhost 4242
+
+# Or you can use telnet, or nc, or ncat, or...
+telnet localhost 4242
 ----
 
 Type in a few characters and press <enter> at the telnet
@@ -359,7 +368,7 @@ Type the following into a file named run_task.py:
 [source,python]
 ----
 import asyncio
-task = asyncio.async(asyncio.sleep(1))
+task = asyncio.Task(asyncio.sleep(1))
 def announce_task_done(task):
     print("Task is done: " + str(id(task)))
 task.add_done_callback(announce_task_done)
@@ -369,6 +378,8 @@ asyncio.get_event_loop().run_until_complete(task)
 Then invoke with "python3 run_task.py".
 
 What happens if you omit the last line?
+
+What happens if you _duplicate_ the last line, so it is run twice?
 
 == Helper function: asyncio.start_server
 
@@ -394,16 +405,18 @@ Create a file named echo_server_task.py and type this in:
 [source,python]
 ----
 import asyncio
-PORT=4242
+PORT = 4242
+NUM_CLIENTS = 0
 def client_connected_handler(client_reader, client_writer):
     print('Got connection from client')
-
 loop = asyncio.get_event_loop()
 pending_server = asyncio.start_server(client_connected_handler,
                  'localhost', PORT)
 server = loop.run_until_complete(pending_server)
 try:
     loop.run_forever()
+except KeyboardInterrupt:
+    print('\n{} Clients Served'.format(NUM_CLIENTS))
 finally:
     loop.close()
 ----
@@ -420,7 +433,8 @@ the writer. Add this function to echo_server_task.py:
 ----
 @asyncio.coroutine
 def handle_client(client_reader, client_writer):
-    while True:
+    print('New client')
+    while not client_reader.at_eof():
         data = (yield from client_reader.readline())
         print(data)
         client_writer.write(b'echo:' + data)
@@ -436,9 +450,13 @@ To make this connection, we will use a task. Modify client_connected_handler lik
 [source,python]
 ----
 
+def client_done(future):
+    global NUM_CLIENTS
+    NUM_CLIENTS += 1
+    print('Client done')
+
 def client_connected_handler(client_reader, client_writer):
-    print('Got connection from client')
-    task = asyncio.async(handle_client(client_reader, client_writer))
+    task = asyncio.Task(handle_client(client_reader, client_writer))
     task.add_done_callback(client_done)
 ----
 
